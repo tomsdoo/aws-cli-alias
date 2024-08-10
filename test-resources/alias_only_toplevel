@@ -1,0 +1,9 @@
+[toplevel]
+
+whoami = sts
+
+some =
+  !f() {
+    node ~/.aws/cli/custom-js/code.js ${1} ${2} ${3} ${4}
+  }; f
+

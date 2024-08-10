@@ -1,0 +1,11 @@
+#asdf
+
+[toplevel]
+
+whoami = sts
+
+
+[command ec2]
+some = asdf
+
+thing = qwer

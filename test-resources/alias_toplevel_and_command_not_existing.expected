@@ -1,0 +1,15 @@
+#asdf
+
+[toplevel]
+
+whoami = sts
+
+code =
+  !f() {
+    node ~/.aws/cli/custom-js/code.js ${1} ${2} ${3} ${4} ${5} ${6}
+  }; f
+
+[command ec2]
+some = asdf
+
+thing = qwer
