@@ -4,16 +4,16 @@ const path = require("path");
 const assert = require("node:assert");
 
 const testFiles = [
-  "alias_empty",
-  "alias_only_toplevel",
-  "alias_only_toplevel_exists",
-  "alias_toplevel_and_command_existing",
-  "alias_toplevel_and_command_not_existing",
+  "empty",
+  "only_toplevel",
+  "only_toplevel_with_existing_code",
+  "toplevel_and_command",
+  "toplevel_and_command_with_existing_code",
 ]
   .map(fileName => ({
     title: fileName,
-    sourceFile: path.join(__dirname, `./test-resources/${fileName}`),
-    expectedFile: path.join(__dirname, `./test-resources/${fileName}.expected`),
+    sourceFile: path.join(__dirname, `./test-resources/code/alias/${fileName}`),
+    expectedFile: path.join(__dirname, `./test-resources/code/alias/${fileName}.expected`),
   }));
 
 (async () => {
