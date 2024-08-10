@@ -1,5 +1,5 @@
 {
-  "name": "aws-cli-alias-code",
+  "name": "aws-cli-alias",
   "version": "0.1.0",
   "description": "aws cli alias code",
   "main": "index.js",
