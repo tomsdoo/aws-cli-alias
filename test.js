@@ -12,8 +12,8 @@ const testFiles = [
 ]
   .map(fileName => ({
     title: fileName,
-    sourceFile: path.join(__dirname, `./test-resources/${fileName}`),
-    expectedFile: path.join(__dirname, `./test-resources/${fileName}.expected`),
+    sourceFile: path.join(__dirname, `./test-resources/code/${fileName}`),
+    expectedFile: path.join(__dirname, `./test-resources/code/${fileName}.expected`),
   }));
 
 (async () => {
