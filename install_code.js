@@ -9,7 +9,7 @@ const {
 
 const ALIAS_NAME = "code";
 
-const JS_URL = "http://localhost:8080/code.js";
+const JS_URL = `http://localhost:8080/${ALIAS_NAME}.js`;
 
 async function prepareCodeJs() {
   await mkdir(
