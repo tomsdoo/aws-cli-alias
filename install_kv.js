@@ -9,10 +9,8 @@ const {
 
 const ALIAS_NAME = "kv";
 
-const JS_URL = `https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/${ALIAS_NAME}.js`;
-
 (async () => {
-  await downloadCustomJs(JS_URL, ALIAS_NAME);
+  await downloadCustomJs(ALIAS_NAME);
   await writeFile(
     awsCliAliasFilePath,
     makeNextAliasContent(ALIAS_NAME, await readExistingAliasContent()),

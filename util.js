@@ -13,7 +13,8 @@ async function readExistingAliasContent() {
   }
 }
 
-async function downloadCustomJs(jsUrl, aliasName) {
+async function downloadCustomJs(aliasName) {
+  const jsUrl = `https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/${aliasName}.js`;
   await mkdir(
     awsCliCustomJsDirectory,
     { recursive: true }
