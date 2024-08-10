@@ -1,4 +1,4 @@
-const { readFile } = require("fs/promises");
+const { mkdir, readFile, writeFile } = require("fs/promises");
 const { homedir } = require("os");
 const path = require("path");
 const AWS_CLI_CUSTOM_JS = ".aws/cli/custom-js";
@@ -11,6 +11,19 @@ async function readExistingAliasContent() {
   }catch(e) {
     return "";
   }
+}
+
+async function downloadCustomJs(aliasName) {
+  const jsUrl = `https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/${aliasName}.js`;
+  await mkdir(
+    awsCliCustomJsDirectory,
+    { recursive: true }
+  );
+  const jsText = await fetch(jsUrl)
+    .then(r => r.text());
+  const jsPath =
+    path.join(awsCliCustomJsDirectory, `${aliasName}.js`);
+  await writeFile(jsPath, jsText, { encoding: "utf8" });
 }
 
 
@@ -62,4 +75,5 @@ module.exports = {
   awsCliAliasFilePath,
   awsCliCustomJsDirectory,
   readExistingAliasContent,
+  downloadCustomJs,
 };

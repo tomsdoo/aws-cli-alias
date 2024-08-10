@@ -1,0 +1,10 @@
+[toplevel]
+code =
+  !f() {
+    node ~/.aws/cli/custom-js/code.js ${1} ${2} ${3} ${4} ${5} ${6}
+  }; f
+
+kv =
+  !f() {
+    node ~/.aws/cli/custom-js/kv.js ${1} ${2} ${3} ${4} ${5} ${6}
+  }; f

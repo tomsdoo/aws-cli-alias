@@ -7,7 +7,7 @@ const {
   makeNextAliasContent,
 } = require("./util");
 
-const ALIAS_NAME = "code";
+const ALIAS_NAME = "kv";
 
 (async () => {
   await downloadCustomJs(ALIAS_NAME);
