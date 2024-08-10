@@ -1,27 +1,27 @@
-const { exec } = require("child_process");
+const { makeNextAliasContent } = require("./util");
+const { readFile } = require("fs/promises");
+const path = require("path");
+const assert = require("node:assert");
 
-async function execute(commandline) {
-  return new Promise((resolve, reject) => {
-    exec(commandline, (err, stdout, stderr) => {
-      (err ? reject : resolve)(err ? stderr : stdout);
-    });
-  });
-}
-
-const commandLinesForTestingRegExp = [
+const testFiles = [
   "alias_empty",
   "alias_only_toplevel",
   "alias_only_toplevel_exists",
   "alias_toplevel_and_command_existing",
   "alias_toplevel_and_command_not_existing",
 ]
-  .map(fileName => `node install.js test-reg-exp ./test-resources/${fileName}`);
+  .map(fileName => ({
+    title: fileName,
+    sourceFile: path.join(__dirname, `./test-resources/${fileName}`),
+    expectedFile: path.join(__dirname, `./test-resources/${fileName}.expected`),
+  }));
 
 (async () => {
-  for(const commandline of [
-    ...commandLinesForTestingRegExp,
-  ]) {
-    await execute(commandline);
+  for(const { title, sourceFile, expectedFile } of testFiles) {
+    const sourceText = await readFile(sourceFile, { encoding: "utf8" });
+    const expectedText = await readFile(expectedFile, { encoding: "utf8" });
+    const nextText = makeNextAliasContent("code", sourceText);
+    assert(nextText === expectedText, title);
   }
 })();
 
