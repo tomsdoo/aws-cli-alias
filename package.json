@@ -1,0 +1,15 @@
+{
+  "name": "aws-cli-alias-code",
+  "version": "0.1.0",
+  "description": "aws cli alias code",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [],
+  "author": "tomsdoo",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
