@@ -1,4 +1,19 @@
+const { readFile } = require("fs/promises");
+const { homedir } = require("os");
+const path = require("path");
 const AWS_CLI_CUSTOM_JS = ".aws/cli/custom-js";
+const awsCliAliasFilePath = path.join(homedir(), "./.aws/cli/alias");
+const awsCliCustomJsDirectory = path.join(homedir(), `./${AWS_CLI_CUSTOM_JS}`);
+
+async function readExistingAliasContent() {
+  try{
+    return await readFile(awsCliAliasFilePath, { encoding: "utf8" });
+  }catch(e) {
+    return "";
+  }
+}
+
+
 const makeAliasText = (aliasName) => `ALIASNAME =
   !f() {
     node ~/${AWS_CLI_CUSTOM_JS}/ALIASNAME.js \${1} \${2} \${3} \${4} \${5} \${6}
@@ -44,4 +59,7 @@ function makeNextAliasContent(aliasName, content) {
 
 module.exports = {
   makeNextAliasContent,
+  awsCliAliasFilePath,
+  awsCliCustomJsDirectory,
+  readExistingAliasContent,
 };
