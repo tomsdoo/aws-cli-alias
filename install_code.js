@@ -9,7 +9,7 @@ const {
 
 const ALIAS_NAME = "code";
 
-const JS_URL = `http://localhost:8080/${ALIAS_NAME}.js`;
+const JS_URL = `https://raw.githubusercontent.com/tomsdoo/aws-cli-alias-code/HEAD/${ALIAS_NAME}.js`;
 
 async function prepareCodeJs() {
   await mkdir(
