@@ -17,3 +17,9 @@
 ``` sh
 /bin/bash -c "ALIAS_NAME=kv; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"
 ```
+
+### note
+
+``` sh
+/bin/bash -c "ALIAS_NAME=note; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"
+```
