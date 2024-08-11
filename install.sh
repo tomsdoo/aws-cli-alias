@@ -7,9 +7,9 @@ UTILJSFILENAME=util.js
 JSFILENAME=install.js
 UTILJS=$TMPDIR$UTILJSFILENAME
 INSTALLJS=$TMPDIR$JSFILENAME
-REMOTE_UTILJS=https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/util.js
+REMOTE_UTILJS=https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/feature/geta/util.js
 
-REMOTE_INSTALLJS="https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install_${ALIAS_NAME}.js"
+REMOTE_INSTALLJS="https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/feature/geta/install_${ALIAS_NAME}.js"
 
 curl -fsSL $REMOTE_UTILJS > $UTILJS
 curl -fsSL $REMOTE_INSTALLJS > $INSTALLJS
