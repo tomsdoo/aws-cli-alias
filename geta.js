@@ -136,6 +136,95 @@ const rds = {
   }
 };
 
+class CliParams {
+  obj;
+  constructor(obj) {
+    this.obj = obj;
+  }
+  toString() {
+    return Object.entries(this.obj)
+      .filter(([_,value]) => value)
+      .map(([key, value]) => ({
+        key,
+        value,
+        cliKey: "--" + key.replace(/([A-Z])/g, ($0,$1) => `-${$1.toLowerCase()}`)
+      }))
+      .map(({cliKey, value}) => [cliKey, value].join(" "))
+      .join(" ");
+  }
+}
+
+class NextTokenLooper {
+  async doLoop(maxItems, callback) {
+    const darr = [];
+    let startingToken = null;
+    while(true) {
+      const { resultItems, NextToken } = await callback({
+        maxItems,
+        startingToken,
+      });
+      darr.push(resultItems);
+      if(!NextToken) {
+        break;
+      }
+      startingToken = NextToken;
+    }
+    return darr.flat();
+  }
+}
+
+const redshift = {
+  async listNamespaces() {
+    return await execute(`aws redshift-serverless list-namespaces`).then((r) => JSON.parse(r).namespaces);
+  },
+  async listWorkgroups() {
+    return await execute(`aws redshift-serverless list-workgroups`).then((r) => JSON.parse(r).workgroups);
+  },
+  Db: class Db extends NextTokenLooper {
+    workgroupName;
+    dbName;
+    constructor(workgroupName, dbName) {
+      super();
+      this.workgroupName = workgroupName;
+      this.dbName = dbName;
+    }
+
+    async listDatabases() {
+      return await this.doLoop(60, async({maxItems, startingToken}) => {
+        const cliParams = new CliParams({
+          workgroupName: this.workgroupName,
+          database: this.dbName,
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws redshift-data list-databases ${cliParams.toString()}`;
+        const { Databases: resultItems, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+        return {
+          resultItems,
+          NextToken,
+        };
+      });
+    }
+
+    async describeTable() {
+      return await this.doLoop(1000, async ({maxItems, startingToken}) => {
+        const cliParams = new CliParams({
+          workgroupName: this.workgroupName,
+          database: this.dbName,
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws redshift-data describe-table ${cliParams.toString()}`;
+        const { ColumnList: resultItems, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+        return {
+          resultItems,
+          NextToken,
+        };
+      });
+    }
+  },
+};
+
 const secretsManager = {
   async listSecrets(keyword,onlyNames) {
     const regExps = (keyword ?? "").split(" ").map(kw => new RegExp(kw, "i"));
@@ -199,6 +288,7 @@ globalThis.aws = {
   ec2,
   profile,
   rds,
+  redshift,
   secretsManager,
 };
 
