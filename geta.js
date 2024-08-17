@@ -28,6 +28,12 @@ async function execute(commandLine) {
 }
 globalThis.execute = execute;
 
+const getaParams = process.argv.slice(2);
+if(getaParams.length === 1 && getaParams[0] === "--update") {
+  execute(`/bin/bash -c "ALIAS_NAME=geta; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"`);
+  process.exit();
+}
+
 function getValueText(obj) {
   const delimiter = " ";
   if(Array.isArray(obj)) {
