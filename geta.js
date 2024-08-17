@@ -147,9 +147,10 @@ class CliParams {
       .map(([key, value]) => ({
         key,
         value,
-        cliKey: "--" + key.replace(/([A-Z])/g, ($0,$1) => `-${$1.toLowerCase()}`)
+        cliKey: "--" + key.replace(/([A-Z])/g, ($0,$1) => `-${$1.toLowerCase()}`),
+        cliValue: value.toString().match(/\s/) ? `"${value}"` : value,
       }))
-      .map(({cliKey, value}) => [cliKey, value].join(" "))
+      .map(({cliKey, cliValue}) => [cliKey, cliValue].join(" "))
       .join(" ");
   }
 }
@@ -173,12 +174,62 @@ class NextTokenLooper {
   }
 }
 
+class ResultRecord {
+  columnMetadata;
+  rawRecord;
+  recordValueTypes = ["blobValue", "booleanValue", "doubleValue", "isNull", "longValue", "stringValue"];
+  constructor(columnMetadata, rawRecord) {
+    this.ColumnMetadata = columnMetadata;
+    this.rawRecord = rawRecord;
+  }
+  get record() {
+    return Object.fromEntries(
+      this.ColumnMetadata.map(({name}, i) => {
+        const [key,rawValue] = Object.entries(this.rawRecord[i])
+          .filter(([key]) => this.recordValueTypes.includes(key))[0];
+        const value = key === "isNull" && rawValue === true
+          ? null
+          : rawValue;
+        return [name, value];
+      })
+    );
+  }
+}
+
 const redshift = {
   async listNamespaces() {
     return await execute(`aws redshift-serverless list-namespaces`).then((r) => JSON.parse(r).namespaces);
   },
   async listWorkgroups() {
     return await execute(`aws redshift-serverless list-workgroups`).then((r) => JSON.parse(r).workgroups);
+  },
+  async listStatements() {
+    return await new NextTokenLooper().doLoop(1000, async ({naxItems, startingToken}) => {
+      const { Statements: resultItems, NextToken } = await execute(`aws redshift-data list-statements`).then((r) => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+  async describeStatement(id) {
+    const cliParams = new CliParams({
+      id,
+    });
+    const cmd = `aws redshift-data describe-statement ${cliParams.toString()}`;
+    return await execute(cmd).then((r) => JSON.parse(r));
+  },
+  async getStatementResult(id) {
+    return await new NextTokenLooper().doLoop(1000, async ({maxItems, startingToken}) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+        id,
+      });
+      const cmd = `aws redshift-data get-statement-result ${cliParams.toString()}`;
+      const { ColumnMetadata, Records, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+      const resultItems = Records.map(
+        record => new ResultRecord(ColumnMetadata, record).record
+      );
+      return { resultItems, NextToken };
+    });
   },
   Db: class Db extends NextTokenLooper {
     workgroupName;
@@ -188,12 +239,17 @@ const redshift = {
       this.workgroupName = workgroupName;
       this.dbName = dbName;
     }
+    get baseParamsObj() {
+      return {
+        workgroupName: this.workgroupName,
+        database: this.dbName,
+      };
+    }
 
     async listDatabases() {
       return await this.doLoop(60, async({maxItems, startingToken}) => {
         const cliParams = new CliParams({
-          workgroupName: this.workgroupName,
-          database: this.dbName,
+          ...this.baseParamsObj,
           maxItems,
           startingToken,
         });
@@ -206,11 +262,23 @@ const redshift = {
       });
     }
 
+    async listSchemas() {
+      return await this.doLoop(1000, async ({maxItems, startingToken}) => {
+        const cliParams = new CliParams({
+          ...this.baseParamsObj,
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws redshift-data list-schemas ${cliParams.toString()}`;
+        const { Schemas: resultItems, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+        return { resultItems, NextToken };
+      });
+    }
+
     async describeTable() {
       return await this.doLoop(1000, async ({maxItems, startingToken}) => {
         const cliParams = new CliParams({
-          workgroupName: this.workgroupName,
-          database: this.dbName,
+          ...this.baseParamsObj,
           maxItems,
           startingToken,
         });
@@ -221,6 +289,15 @@ const redshift = {
           NextToken,
         };
       });
+    }
+
+    async executeStatement(sql) {
+      const cliParams = new CliParams({
+        ...this.baseParamsObj,
+        sql,
+      });
+      const cmd = `aws redshift-data execute-statement ${cliParams.toString()}`;
+      return await execute(cmd).then((r) => JSON.parse(r));
     }
   },
 };
