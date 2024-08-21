@@ -84,8 +84,8 @@ if(isTidy) {
       .update(JSON.stringify(note))
       .digest("hex")
       .slice(0, 7);
-    store[nextId] = note;
     delete store[id];
+    store[nextId] = note;
   }
   saveStore(store);
   process.exit();
