@@ -4,6 +4,15 @@ const params = process.argv.slice(2);
 
 const [noteId] = params;
 
+const isUpdate = ["update", "--update"].includes(noteId);
+if(isUpdate) {
+  exec(
+    `/bin/bash -c "ALIAS_NAME=note; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"`,
+    () => {}
+  );
+  process.exit();
+}
+
 const helpText = `
 example: aws note edit
 \tit opens the note.json with vscode
