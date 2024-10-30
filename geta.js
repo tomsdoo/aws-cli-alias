@@ -308,6 +308,86 @@ const redshift = {
   },
 };
 
+const logs = {
+  async describeLogGroups() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws logs describe-log-groups ${cliParams.toString()}`;
+      const { logGroups: resultItems, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(logGroups => logGroups.map(logGroup => ({
+        ...logGroup,
+        async describeSubscriptionFilters() {
+          return await aws.logs.describeSubscriptionFilters(logGroup.logGroupName);
+        },
+      })));
+  },
+  async describeSubscriptionFilters(logGroupName) {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+        logGroupName,
+      });
+      const cmd = `aws logs describe-subscription-filters ${cliParams.toString()}`;
+      const { subscriptionFilters: resultItems, NextToken } = await execute(cmd).then((r) => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  }
+};
+
+const firehose = {
+  async listDeliveryStreams() {
+    const darr = [];
+    let exclusiveStartDeliveryStreamName = undefined;
+    while(true) {
+      const cliParams = new CliParams({
+        exclusiveStartDeliveryStreamName,
+      });
+      const cmd = `aws firehose list-delivery-streams ${cliParams.toString()}`;
+      const {
+        DeliveryStreamNames,
+        HasMoreDeliveryStreams,
+      } = await execute(cmd).then(r => JSON.parse(r));
+      darr.push(DeliveryStreamNames);
+      if(!HasMoreDeliveryStreams) {
+        break;
+      }
+      exclusiveStartDeliveryStreamName = DeliveryStreamNames.slice(-1) ?? "";
+    }
+    return darr.flat();
+  },
+  async descibeDeliveryStream(deliveryStreamName) {
+    const darr = [];
+    const limit = 1;
+    let exclusiveStartDestinationId = undefined;
+    while(true) {
+      const cliParams = new CliParams({
+        deliveryStreamName,
+        limit,
+        exclusiveStartDestinationId,
+      });
+      const cmd = `aws firehose describe-delivery-stream ${cliParams.toString()}`;
+      console.log(cmd);
+      const {
+        DeliveryStreamDescription,
+      } = await execute(cmd).then(r => JSON.parse(r));
+      darr.push(DeliveryStreamDescription.Destinations);
+      if(!DeliveryStreamDescription.HasMoreDestinations) {
+        return {
+          ...DeliveryStreamDescription,
+          Destinations: darr.flat(),
+        };
+      }
+      exclusiveStartDestinationId = DeliveryStreamDescription.Destinations.slice(-1)?.[0]?.DestinationId;
+    }
+  }
+};
+
 const secretsManager = {
   async listSecrets(keyword,onlyNames) {
     const regExps = (keyword ?? "").split(" ").map(kw => new RegExp(kw, "i"));
@@ -369,6 +449,8 @@ globalThis.aws = {
   cognitoIdp,
   dynamodb,
   ec2,
+  firehose,
+  logs,
   profile,
   rds,
   redshift,
