@@ -32,6 +32,20 @@ const getaParams = process.argv.slice(2);
 if(getaParams.length === 1 && getaParams[0] === "--update") {
   execute(`/bin/bash -c "ALIAS_NAME=geta; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"`);
   process.exit();
+} else if (getaParams.length === 1 && getaParams[0] === "--help") {
+  console.log([
+    "aws geta",
+    "",
+    "options",
+    ...[
+      { option: "--update", description: "update geta script" },
+      { option: "--help", description: "show geta help" },
+    ]
+      .map(({ option, description }) => [`  ${option}`, `    ${description}`])
+      .flat(),
+    "",
+  ].join("\n"));
+  process.exit();
 }
 
 function getValueText(obj) {
