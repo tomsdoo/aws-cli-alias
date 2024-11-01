@@ -66,10 +66,33 @@ const cloudFront = {
       (r) => JSON.parse(r).DistributionList.Items
     )
       .then(distributions => 
-        distributions.filter(distribution => {
-          const text = getValueText(distribution);
-          return regExps.every(regExp => regExp.test(text));
-        })
+        distributions
+          .filter(distribution => {
+            const text = getValueText(distribution);
+            return regExps.every(regExp => regExp.test(text));
+          })
+          .map(distribution => {
+            const s3Origins = distribution.Origins.Items
+              .filter(
+                ({ DomainName }) =>
+                  /\.s3-website-.*amazonaws\.com$/.test(DomainName)
+              )
+              .map(({ DomainName }) => DomainName);
+            const s3Buckets = s3Origins
+              .map(
+                s3Origin => s3Origin.replace(
+                  /(.+)\.s3-website-.*?\.amazonaws\.com$/,
+                  ($0, $1) => $1,
+                )
+              );
+            const hasS3Origins = s3Origins.length > 0;
+            return {
+              ...distribution,
+              hasS3Origins,
+              s3Origins,
+              s3Buckets,
+            };
+          })
       );
   },
 };
