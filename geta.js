@@ -537,6 +537,95 @@ const apiGateway = {
   },
 };
 
+const iam = {
+  async listGroups() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-groups ${cliParams.toString()}`;
+      const { Groups: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(groups => groups.map(group => ({
+        ...group,
+        consoleUrl: `https://console.aws.amazon.com/iam/home#/groups/details/${group.GroupName}`,
+      })));
+  },
+  async listUsers() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-users ${cliParams.toString()}`;
+      const { Users: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(users => users.map(user => ({
+        ...user,
+        listGroupsForUser: async () => await aws.iam.listGroupsForUser(user.UserName),
+        consoleUrl: `https://console.aws.amazon.com/iam/home#/users/details/${user.UserName}`,
+      })));
+  },
+  async listGroupsForUser(userName) {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        userName,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-groups-for-user ${cliParams.toString()}`;
+      const { Groups: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+  async listRoles() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-roles ${cliParams.toString()}`;
+      const { Roles: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(roles => roles.map(role => ({
+        ...role,
+        listRolePolicies: async () => await aws.iam.listRolePolicies(role.RoleName),
+        consoleUrl: `https://console.aws.amazon.com/iam/home#/roles/details/${role.RoleName}`,
+      })));
+  },
+  async listRolePolicies(roleName) {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        roleName,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-role-policies ${cliParams.toString()}`;
+      const { PolicyNames: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+  async listPolicies() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws iam list-policies ${cliParams.toString()}`;
+      const { Policies: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(policies => policies.map(policy => ({
+        ...policy,
+        consoleUrl: `https://console.aws.amazon.com/iam/home#/policies/details/${encodeURIComponent(policy.Arn)}?section=permissions`,
+      })));
+  },
+};
+
 const secretsManager = {
   async listSecrets(keyword,onlyNames) {
     const regExps = (keyword ?? "").split(" ").map(kw => new RegExp(kw, "i"));
@@ -600,6 +689,7 @@ globalThis.aws = {
   dynamodb,
   ec2,
   firehose,
+  iam,
   logs,
   profile,
   rds,
