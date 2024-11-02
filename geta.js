@@ -345,6 +345,37 @@ const redshift = {
   },
 };
 
+const route53 = {
+  async listHostedZones() {
+    return await new NextTokenLooper().doLoop(1000, async({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws route53 list-hosted-zones ${cliParams.toString()}`;
+      const { HostedZones: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(hostedZones => hostedZones.map(hostedZone => ({
+        ...hostedZone,
+        consoleUrl: `https://console.aws.amazon.com/route53/v2/hostedzones#ListRecordSets/${hostedZone.Id.replace(/^\/hostedzone\//,"")}`,
+        listResourceRecordSets: async () => await route53.listResourceRecordSets(hostedZone.Id),
+      })));
+  },
+  async listResourceRecordSets(hostedZoneId) {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        hostedZoneId,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws route53 list-resource-record-sets ${cliParams.toString()}`;
+      const { ResourceRecordSets: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
 const logs = {
   async describeLogGroups() {
     return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
@@ -491,6 +522,7 @@ globalThis.aws = {
   profile,
   rds,
   redshift,
+  route53,
   secretsManager,
 };
 
