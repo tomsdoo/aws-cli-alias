@@ -459,6 +459,84 @@ const firehose = {
   }
 };
 
+const apiGateway = {
+  async getRestApis() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws apigateway get-rest-apis ${cliParams.toString()}`;
+      const { items: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(apis => apis.map(api => ({
+        ...api,
+        getStages: async () => await aws.apiGateway.getStages(api.id),
+        getResources: async () => await aws.apiGateway.getResources(api.id),
+        consoleUrl: `https://console.aws.amazon.com/apigateway/main/apis/${api.id}/resources?api=${api.id}`,
+      })));
+  },
+  async getRestApi(restApiId) {
+    const cliParams = new CliParams({
+      restApiId,
+    });
+    const cmd = `aws apigateway get-rest-api ${cliParams.toString()}`;
+    return await execute(cmd)
+      .then(r => JSON.parse(r))
+      .then(api => ({
+        ...api,
+        getStages: async () => await aws.apiGateway.getStages(api.id),
+        getResources: async () => await aws.apiGateway.getResources(api.id),
+        consoleUrl: `https://console.aws.amazon.com/apigateway/main/apis/${api.id}/resources?api=${api.id}`,
+      }));
+  },
+  async getStages(restApiId) {
+    const cliParams = new CliParams({
+      restApiId,
+    });
+    const cmd = `aws apigateway get-stages ${cliParams.toString()}`;
+    return await execute(cmd)
+      .then(r => JSON.parse(r));
+  },
+  async getResources(restApiId) {
+    const cliParams = new CliParams({
+      restApiId,
+    });
+    const cmd = `aws apigateway get-resources ${cliParams.toString()}`;
+    return await execute(cmd)
+      .then(r => JSON.parse(r));
+  },
+  async getDomainNames() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws apigateway get-domain-names ${cliParams.toString()}`;
+      const { items: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(domains => domains.map(domain => ({
+        ...domain,
+        getBasePathMappings: async () => await aws.apiGateway.getBasePathMappings(domain.domainName),
+        consoleUrl: `https://console.aws.amazon.com/apigateway/main/publish/domain-names/api-mappings?api=unselected&domain=${domain.domainName}`,
+      })));
+  },
+  async getBasePathMappings(domainName) {
+    return await new NextTokenLooper().doLoop(1, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        domainName,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws apigateway get-base-path-mappings ${cliParams.toString()}`;
+      const { items: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
 const secretsManager = {
   async listSecrets(keyword,onlyNames) {
     const regExps = (keyword ?? "").split(" ").map(kw => new RegExp(kw, "i"));
@@ -516,6 +594,7 @@ const profile = {
 };
 
 globalThis.aws = {
+  apiGateway,
   cloudFront,
   cognitoIdp,
   dynamodb,
