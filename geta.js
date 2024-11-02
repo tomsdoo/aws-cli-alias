@@ -434,7 +434,7 @@ const firehose = {
   },
   async descibeDeliveryStream(deliveryStreamName) {
     const darr = [];
-    const limit = 1;
+    const limit = 1000;
     let exclusiveStartDestinationId = undefined;
     while(true) {
       const cliParams = new CliParams({
@@ -443,7 +443,6 @@ const firehose = {
         exclusiveStartDestinationId,
       });
       const cmd = `aws firehose describe-delivery-stream ${cliParams.toString()}`;
-      console.log(cmd);
       const {
         DeliveryStreamDescription,
       } = await execute(cmd).then(r => JSON.parse(r));
@@ -451,6 +450,7 @@ const firehose = {
       if(!DeliveryStreamDescription.HasMoreDestinations) {
         return {
           ...DeliveryStreamDescription,
+          consoleUrl: `https://console.aws.amazon.com/firehose/home#/details/${deliveryStreamName}`,
           Destinations: darr.flat(),
         };
       }
