@@ -391,6 +391,7 @@ const logs = {
     })
       .then(logGroups => logGroups.map(logGroup => ({
         ...logGroup,
+        consoleUrl: `https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/${encodeURIComponent(encodeURIComponent(logGroup.logGroupName))}`,
         async describeSubscriptionFilters() {
           return await aws.logs.describeSubscriptionFilters(logGroup.logGroupName);
         },
