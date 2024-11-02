@@ -347,6 +347,20 @@ const redshift = {
   },
 };
 
+const s3api = {
+  async listBuckets() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws s3api list-buckets ${cliParams.toString()}`;
+      const { Buckets: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
 const route53 = {
   async listHostedZones() {
     return await new NextTokenLooper().doLoop(1000, async({ maxItems, startingToken }) => {
@@ -696,6 +710,7 @@ globalThis.aws = {
   redshift,
   route53,
   secretsManager,
+  s3api,
 };
 
 repl.start();
