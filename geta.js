@@ -72,6 +72,7 @@ const cloudFront = {
             return regExps.every(regExp => regExp.test(text));
           })
           .map(distribution => {
+            const consoleUrl = `https://console.aws.amazon.com/cloudfront/home#distributions/${distribution.Id}`;
             const s3Origins = distribution.Origins.Items
               .filter(
                 ({ DomainName }) =>
@@ -88,6 +89,7 @@ const cloudFront = {
             const hasS3Origins = s3Origins.length > 0;
             return {
               ...distribution,
+              consoleUrl,
               hasS3Origins,
               s3Origins,
               s3Buckets,
