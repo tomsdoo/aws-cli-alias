@@ -551,6 +551,64 @@ const apiGateway = {
   },
 };
 
+const athena = {
+  async listDataCatalogs() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws athena list-data-catalogs ${cliParams.toString()}`;
+      const { DataCatalogsSummary: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(catalogs => catalogs.map(catalog => ({
+        ...catalog,
+        listDatabases: async () => aws.athena.listDatabases(catalog.CatalogName),
+      })));
+  },
+  async listNamedQueries() {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws athena list-named-queries ${cliParams.toString()}`;
+      const { NamedQueryIds: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    })
+      .then(async namedQueryIds => {
+        const resultItems = [];
+        for (const namedQueryId of namedQueryIds) {
+          resultItems.push(
+            await aws.athena.getNamedQuery(namedQueryId)
+          );
+        }
+        return resultItems;
+      });
+  },
+  async getNamedQuery(namedQueryId) {
+    const cliParams = new CliParams({
+      namedQueryId,
+    });
+    const cmd = `aws athena get-named-query ${cliParams.toString()}`;
+    const { NamedQuery } = await execute(cmd).then(r => JSON.parse(r));
+    return NamedQuery;
+  },
+  async listDatabases(catalogName) {
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        catalogName,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws athena list-databases ${cliParams.toString()}`;
+      const { DatabaseList: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
 const iam = {
   async listGroups() {
     return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
@@ -698,6 +756,7 @@ const profile = {
 
 globalThis.aws = {
   apiGateway,
+  athena,
   cloudFront,
   cognitoIdp,
   dynamodb,
