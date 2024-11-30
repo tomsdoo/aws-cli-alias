@@ -1,9 +1,19 @@
 # aws-cli-alias
 
-![depends on aws cli](https://img.shields.io/badge/depends%20on-aws%20cli-informational)
-![depends on node.js](https://img.shields.io/badge/depends%20on-node.js-informational)
-![depends on vscode](https://img.shields.io/badge/depends%20on-vs%20code-informational)
-![Maintenance](https://img.shields.io/maintenance/yes/2024)
+![aws](https://img.shields.io/badge/aws-222?style=for-the-badge&logo=amazonwebservices)
+![ec2](https://img.shields.io/badge/ec2-222?style=for-the-badge&logo=amazonec2)
+![api gateway](https://img.shields.io/badge/API%20Gateway-222?style=for-the-badge&logo=amazonapigateway)
+![cognito](https://img.shields.io/badge/cognito-222?style=for-the-badge&logo=amazoncognito)
+![dynamodb](https://img.shields.io/badge/dynamodb-222?style=for-the-badge&logo=amazondynamodb)
+![cloudwatch](https://img.shields.io/badge/cloudwatch-222?style=for-the-badge&logo=amazoncloudwatch)
+![rds](https://img.shields.io/badge/rds-222?style=for-the-badge&logo=amazonrds)
+![redshift](https://img.shields.io/badge/redshift-222?style=for-the-badge&logo=amazonredshift)
+![route53](https://img.shields.io/badge/route53-222?style=for-the-badge&logo=amazonroute53)
+![secretsmanager](https://img.shields.io/badge/secretsmanager-222?style=for-the-badge&logo=awssecretsmanager)
+![s3](https://img.shields.io/badge/s3-222?style=for-the-badge&logo=amazons3)
+![nodejs](https://img.shields.io/badge/Node.js-222?style=for-the-badge&logo=nodedotjs)
+![js](https://img.shields.io/badge/javascript-222?style=for-the-badge&logo=javascript)
+
 
 ### code
 
