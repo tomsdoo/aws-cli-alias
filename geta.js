@@ -607,6 +607,30 @@ const athena = {
       return { resultItems, NextToken };
     });
   },
+  async executeQuery(sql) {
+    const { QueryExecutionId } = await execute(`aws athena start-query-execution --query-string "${sql}"`)
+      .then(JSON.parse);
+    while(true) {
+      const { QueryExecution: { Status: { State: executionStatus }}} = await execute(`aws athena get-query-execution --query-execution-id ${QueryExecutionId}`)
+        .then(JSON.parse);
+      if (executionStatus === "SUCCEEDED") {
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        queryExecutionId: QueryExecutionId,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws athena get-query-results ${cliParams.toString()}`;
+      const { ResultSet, NextToken } = await execute(cmd).then(JSON.parse);
+      const fields = ResultSet.ResultSetMetadata.ColumnInfo;
+      const resultItems = ResultSet.Rows.map(({Data}) => Object.fromEntries(fields.map(({ Name }, fieldIndex) => [Name, Data[fieldIndex].VarCharValue])));
+      return { resultItems, NextToken };
+    });
+  },
 };
 
 const iam = {
