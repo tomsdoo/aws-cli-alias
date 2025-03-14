@@ -170,6 +170,28 @@ const ec2 = {
         }))
       )
   },
+  async describeVpcs() {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws ec2 describe-vpcs ${cliParams.toString()}`;
+      const { Vpcs: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+  async describeSubnets() {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws ec2 describe-subnets ${cliParams.toString()}`;
+      const { Subnets: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
 };
 
 const rds = {
@@ -387,6 +409,20 @@ const route53 = {
       });
       const cmd = `aws route53 list-resource-record-sets ${cliParams.toString()}`;
       const { ResourceRecordSets: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
+const elb = {
+  async describeLoadBalancers() {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws elbv2 describe-load-balancers ${cliParams.toString()}`;
+      const { LoadBalancers: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
       return { resultItems, NextToken };
     });
   },
@@ -785,6 +821,7 @@ globalThis.aws = {
   cognitoIdp,
   dynamodb,
   ec2,
+  elb,
   firehose,
   iam,
   logs,
