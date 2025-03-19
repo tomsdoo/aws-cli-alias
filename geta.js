@@ -75,14 +75,15 @@ const cloudFront = {
             const consoleUrl = `https://console.aws.amazon.com/cloudfront/home#distributions/${distribution.Id}`;
             const s3Origins = distribution.Origins.Items
               .filter(
-                ({ DomainName }) =>
-                  /\.s3-website-.*amazonaws\.com$/.test(DomainName)
+                ({ DomainName, S3OriginConfig }) =>
+                  S3OriginConfig != null ||
+                  /\.s3(-website-|\.).*amazonaws\.com$/.test(DomainName)
               )
               .map(({ DomainName }) => DomainName);
             const s3Buckets = s3Origins
               .map(
                 s3Origin => s3Origin.replace(
-                  /(.+)\.s3-website-.*?\.amazonaws\.com$/,
+                  /(.+)\.s3(-website-|\.).*?amazonaws\.com$/,
                   ($0, $1) => $1,
                 )
               );
@@ -189,6 +190,38 @@ const ec2 = {
       });
       const cmd = `aws ec2 describe-subnets ${cliParams.toString()}`;
       const { Subnets: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  },
+};
+
+const ecr = {
+  async describeRepositories() {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws ecr describe-repositories ${cliParams.toString()}`;
+      const { repositories: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      extendedItems = resultItems.map(resultItem => ({
+        ...resultItem,
+        async describeImages() {
+          return await aws.ecr.describeImages(resultItem.repositoryName);
+        },
+      }));
+      return { resultItems: extendedItems, NextToken };
+    });
+  },
+  async describeImages(repositoryName) {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        repositoryName,
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws ecr describe-images ${cliParams.toString()}`;
+      const { imageDetails: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
       return { resultItems, NextToken };
     });
   },
@@ -821,6 +854,7 @@ globalThis.aws = {
   cognitoIdp,
   dynamodb,
   ec2,
+  ecr,
   elb,
   firehose,
   iam,
