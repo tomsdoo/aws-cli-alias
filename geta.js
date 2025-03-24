@@ -193,6 +193,17 @@ const ec2 = {
       return { resultItems, NextToken };
     });
   },
+  async describeSecurityGroupRules() {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const cmd = `aws ec2 describe-security-group-rules ${cliParams.toString()}`;
+      const { SecurityGroupRules: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      return { resultItems, NextToken };
+    });
+  }
 };
 
 const ecr = {
