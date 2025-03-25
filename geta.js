@@ -102,27 +102,34 @@ const cloudFront = {
 
 const cognitoIdp = {
   async listUserPools() {
-    return await execute(
+    const pools = await execute(
       "aws cognito-idp list-user-pools --max-result 60"
     ).then((r) => JSON.parse(r).UserPools);
+    return pools.map(pool => ({
+      ...pool,
+      async listUsers(email) {
+        return await cognitoIdp.listUsers(pool.Id, email);
+      },
+    }));
   },
   async describeUserPool(poolId) {
     return await execute(
       `aws cognito-idp describe-user-pool --user-pool-id ${poolId}`
     ).then((r) => JSON.parse(r).UserPool);
   },
-  async listUsers(poolId) {
+  async listUsers(poolId, email) {
     let nextToken = undefined;
     const darr = [];
     const interval = 100;
+    const emailParams = email ? `--filter email^=\\"${email}\\"` : "";
     while (true) {
       const { Users, NextToken } = await execute(
-        `aws cognito-idp list-users --user-pool-id ${poolId} --max-items ${interval} ${
+        `aws cognito-idp list-users --user-pool-id ${poolId} ${emailParams} --max-items ${interval} ${
           nextToken ? "--starting-token " + nextToken : ""
         }`
       ).then((r) => JSON.parse(r));
       darr.push(Users);
-      if (Users.length === 0) {
+      if (Users.length === 0 || NextToken == null) {
         break;
       }
       nextToken = NextToken;
@@ -193,13 +200,33 @@ const ec2 = {
       return { resultItems, NextToken };
     });
   },
-  async describeSecurityGroupRules() {
+  async describeSecurityGroups() {
     return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
       const cliParams = new CliParams({
         maxItems,
         startingToken,
       });
-      const cmd = `aws ec2 describe-security-group-rules ${cliParams.toString()}`;
+      const cmd = `aws ec2 describe-security-groups ${cliParams.toString()}`;
+      const { SecurityGroups: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+      function extendSecurityGroup(securityGroup) {
+        return {
+          ...securityGroup,
+          async describeSecurityGroupRules() {
+            return ec2.describeSecurityGroupRules([{Name: "group-id", Values:[securityGroup.GroupId]}]);
+          },
+        };
+      }
+      return { resultItems: resultItems.map(extendSecurityGroup), NextToken };
+    });
+  },
+  async describeSecurityGroupRules(filters) {
+    return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
+      const cliParams = new CliParams({
+        maxItems,
+        startingToken,
+      });
+      const filtersParams = filters == null ? "" : `--filters ${JSON.stringify(JSON.stringify(filters))}`;
+      const cmd = `aws ec2 describe-security-group-rules ${filtersParams} ${cliParams.toString()}`;
       const { SecurityGroupRules: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
       return { resultItems, NextToken };
     });
