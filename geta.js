@@ -1,9 +1,9 @@
 void (async function() {
-  const { readFile } = require("fs/promises");
-  const { homedir } = require("os");
-  const path = require("path");
-  const { exec } = require("child_process");
-  const repl = require("node:repl");
+  const { readFile } = await import("fs/promises");
+  const { homedir } = await import("os");
+  const path = await import("path");
+  const { exec } = await import("child_process");
+  const repl = await import("node:repl");
   const config = {
     awsProfile: "default",
   };
