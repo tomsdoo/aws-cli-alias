@@ -101,27 +101,42 @@ const cloudFront = {
 };
 
 const cognitoIdp = {
-  async listUserPools() {
-    const pools = await execute(
+  async listUserPools({ type, key } = { type: "array", key: null }) {
+    const resPools = await execute(
       "aws cognito-idp list-user-pools --max-result 60"
     ).then((r) => JSON.parse(r).UserPools);
-    return pools.map(pool => ({
+    const pools = resPools.map(pool => ({
       ...pool,
-      async listUsers(email) {
-        return await cognitoIdp.listUsers(pool.Id, email);
+      async listUsers({ email, mergeAttributes } = {}) {
+        return await cognitoIdp.listUsers(pool.Id, { email, mergeAttributes });
       },
     }));
+    switch(type) {
+      case "map":
+        return new Map(pools.map(pool => [
+          /name/i.test(key) ? pool.Name : pool.Id,
+          pool,
+        ]));
+      case "object":
+        return Object.fromEntries(pools.map(pool => [
+          /name/i.test(key) ? pool.Name : pool.Id,
+          pool,
+        ]));
+      default:
+        return pools;
+    }
   },
   async describeUserPool(poolId) {
     return await execute(
       `aws cognito-idp describe-user-pool --user-pool-id ${poolId}`
     ).then((r) => JSON.parse(r).UserPool);
   },
-  async listUsers(poolId, email) {
+  async listUsers(poolId, { email, mergeAttributes } = {}) {
     let nextToken = undefined;
     const darr = [];
     const interval = 100;
     const emailParams = email ? `--filter email^=\\"${email}\\"` : "";
+    const isMergeAtributes = mergeAttributes === true;
     while (true) {
       const { Users, NextToken } = await execute(
         `aws cognito-idp list-users --user-pool-id ${poolId} ${emailParams} --max-items ${interval} ${
@@ -134,7 +149,12 @@ const cognitoIdp = {
       }
       nextToken = NextToken;
     }
-    return darr.flatMap((v) => v);
+    return darr.flat().map((v) => ({
+      ...v,
+      ...(isMergeAtributes ? {
+        mrgedAttributes: Object.fromEntries(v.Attributes.map(({ Name, Value }) => [Name, Value])),
+      } : {}),
+    }));
   },
 };
 
