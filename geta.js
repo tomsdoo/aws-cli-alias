@@ -733,6 +733,23 @@ void (async function() {
         const cmd = `aws athena list-databases ${cliParams.toString()}`;
         const { DatabaseList: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
         return { resultItems, NextToken };
+      })
+        .then(databases => databases.map(database => ({
+          ...database,
+          listTableMetadata: async () => aws.athena.listTableMetadata(catalogName, database.Name),
+        })));
+    },
+    async listTableMetadata(catalogName, databaseName) {
+      return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+        const cliParams = new CliParams({
+          catalogName,
+          databaseName,
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws athena list-table-metadata ${cliParams.toString()}`;
+        const { TableMetadataList: resultItems, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+        return { resultItems, NextToken };
       });
     },
     async executeQuery(sql) {
