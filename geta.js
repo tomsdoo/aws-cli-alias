@@ -170,6 +170,102 @@ void (async function() {
         `aws dynamodb describe-table --table-name ${tableName}`
       ).then((r) => JSON.parse(r).Table);
     },
+    interpretCondition(condition) {
+      const {
+        expressionArr,
+        expressionAttributeValuesObj,
+      } = Object.entries(condition).map(([key, value]) => {
+        const expressionFragment = `${key} = :${key}`;
+        const valueType = typeof value === "number"
+          ? "N"
+          : "S";
+        const expressionAttributeValuesFragment = {
+          [`:${key}`]: {
+            [valueType]: `${value}`,
+          },
+        };
+        return {
+          expressionFragment,
+          expressionAttributeValuesFragment,
+        };
+      })
+        .reduce(({
+          expressionArr,
+          expressionAttributeValuesObj,
+        },{
+          expressionFragment,
+          expressionAttributeValuesFragment,
+        }) => ({
+          expressionArr: [
+            ...expressionArr,
+            expressionFragment,
+          ],
+          expressionAttributeValuesObj: {
+            ...expressionAttributeValuesObj,
+            ...expressionAttributeValuesFragment,
+          },
+        }), {
+          expressionArr: [],
+          expressionAttributeValuesObj: {},
+        });
+      return {
+        expressionArr,
+        expressionAttributeValuesObj,
+      };
+    },
+    async query(tableName, keyCondition, filterCondition) {
+      const {
+        expressionArr: keyConditionExpressionArr,
+        expressionAttributeValuesObj,
+      } = aws.dynamodb.interpretCondition(keyCondition);
+      const filterConditionData = filterCondition == null
+        ? null
+        : aws.dynamodb.interpretCondition(filterCondition);
+      return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+        const cliParams = new CliParams({
+          tableName,
+          keyConditionExpression: keyConditionExpressionArr.join(" AND"),
+          filterExpression: filterConditionData?.expressionArr?.join(" AND ") ?? null,
+          expressionAttributeValues: JSON.stringify(JSON.stringify({
+            ...expressionAttributeValuesObj,
+            ...(filterConditionData?.expressionAttributeValuesObj ?? {}),
+          })),
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws dynamodb query ${cliParams}`;
+        const { Items, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+        const resultItems = Items.map(item => Object.fromEntries(
+          Object.entries(item)
+            .map(([key,value]) => [key, Object.values(value)[0]])
+          )
+        );
+        return { resultItems, NextToken };
+      });
+    },
+    async scan(tableName, condition) {
+      const {
+        expressionArr,
+        expressionAttributeValuesObj,
+      } = aws.dynamodb.interpretCondition(condition);
+      return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
+        const cliParams = new CliParams({
+          tableName,
+          filterExpression: expressionArr.join(" AND"),
+          expressionAttributeValues: JSON.stringify(JSON.stringify(expressionAttributeValuesObj)),
+          maxItems,
+          startingToken,
+        });
+        const cmd = `aws dynamodb scan ${cliParams}`;
+        const { Items, NextToken } = await execute(cmd).then(r => JSON.parse(r));
+        const resultItems = Items.map(item => Object.fromEntries(
+          Object.entries(item)
+            .map(([key,value]) => [key, Object.values(value)[0]])
+          )
+        );
+        return { resultItems, NextToken };
+      });
+    }
   };
   
   const ec2 = {
