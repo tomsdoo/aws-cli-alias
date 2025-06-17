@@ -149,3 +149,43 @@ aws note edit
 
 </details>
 
+
+### store
+
+It provides a store feature with sqlite3.
+
+<details open><summary>installation</summary>
+
+``` sh
+/bin/bash -c "ALIAS_NAME=store; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"
+```
+</details>
+
+<details><summary>usage</summary>
+
+``` sh
+# list types
+aws store type
+```
+``` sh
+# list key and titles
+aws store [type]
+```
+``` sh
+# show item
+aws store [key]
+```
+``` sh
+# add item interactively
+aws store add
+```
+``` sh
+# edit item by key
+aws store edit [key]
+```
+``` sh
+# delete item by key
+aws store delete [key]
+```
+
+</details>
