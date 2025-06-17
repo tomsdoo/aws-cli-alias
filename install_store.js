@@ -7,7 +7,7 @@ void (async () => {
     downloadCustomJs,
     readExistingAliasContent,
     makeNextAliasContent,
-  } = await import("./util");
+  } = await import("./util.js");
 
   await downloadCustomJs(ALIAS_NAME);
   await writeFile(
