@@ -19,8 +19,6 @@ aws store delete [key]
 `;
 
 void (async () => {
-  const fs = await import("fs/promises");
-  const path = await import("path");
   const { fileURLToPath } = await import("url");
   const { exec } = await import("child_process");
   const readline = await import("readline/promises");
