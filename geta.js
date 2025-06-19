@@ -472,7 +472,7 @@ void (async function() {
       return await execute(cmd).then((r) => JSON.parse(r));
     },
     async getStatementResult(id) {
-      return await new NextTokenLooper().doLoop(1000, async ({maxItems, startingToken}) => {
+      return await new NextTokenLooper().doLoop(100, async ({maxItems, startingToken}) => {
         const cliParams = new CliParams({
           maxItems,
           startingToken,
@@ -552,7 +552,17 @@ void (async function() {
           sql,
         });
         const cmd = `aws redshift-data execute-statement ${cliParams.toString()}`;
-        return await execute(cmd).then((r) => JSON.parse(r));
+        const { Id } = await execute(cmd).then((r) => JSON.parse(r));
+        while (true) {
+          const statementStatus = await redshift.describeStatement(Id);
+          if (statementStatus.Status === "FAILED") {
+            throw new Error(statementStatus.Error);
+          }
+          if (statementStatus.Status === "FINISHED") {
+            return await redshift.getStatementResult(Id);
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
     },
   };
