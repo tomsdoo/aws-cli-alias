@@ -381,6 +381,66 @@ void (async function() {
       });
     },
   };
+
+  const ecs = {
+    async listClusters() {
+      const { clusterArns } = await execute(`aws ecs list-clusters`).then(r => JSON.parse(r));
+      return clusterArns.map(clusterArn => ({
+        clusterArn,
+        async describeClusters() {
+          return await ecs.describeClusters(clusterArn);
+        },
+        async listServices() {
+          return await ecs.listServices(clusterArn);
+        },
+        async listTasks() {
+          return await ecs.listTasks(clusterArn);
+        },
+      }));
+    },
+    async describeClusters(cluster) {
+      const { clusters } = await execute(`aws ecs describe-clusters --clusters ${cluster}`).then(r => JSON.parse(r));
+      return clusters.map(cluster => ({
+        ...cluster,
+        async listServices() {
+          return await ecs.listServices(cluster.clusterArn);
+        },
+      }));
+    },
+    async listServices(clusterArn) {
+      const { serviceArns } = await execute(`aws ecs list-services --cluster ${clusterArn}`).then(r => JSON.parse(r));
+      return serviceArns.map(serviceArn => ({
+        clusterArn,
+        serviceArn,
+        async describeServices() {
+          return await ecs.describeServices(clusterArn, serviceArn);
+        },
+      }));
+    },
+    async describeServices(clusterArn, serviceArn) {
+      const { services } = await execute(`aws ecs describe-services --cluster ${clusterArn} --services ${serviceArn}`).then(r => JSON.parse(r));
+      return services;
+    },
+    async listTasks(clusterArn) {
+      const { taskArns } = await execute(`aws ecs list-tasks --cluster ${clusterArn}`).then(r => JSON.parse(r));
+      return taskArns.map(taskArn => ({
+        clusterArn,
+        taskArn,
+        async describeTasks() {
+          return await ecs.describeTasks(clusterArn, taskArn);
+        },
+      }));
+    },
+    async describeTasks(clusterArn, taskArn) {
+      const { tasks } = await execute(`aws ecs describe-tasks --cluster ${clusterArn} --tasks ${taskArn}`).then(r => JSON.parse(r));
+      return tasks.map(task => ({
+        ...task,
+        getExecuteCommand() {
+          return task.containers.map(({name}) => `aws ecs execute-command --cluster ${clusterArn} --task ${task.taskArn} --container ${name} --interactive --command sh`);
+        },
+      }));
+    },
+  };
   
   const rds = {
     async getInstances() {
@@ -1037,6 +1097,7 @@ void (async function() {
     dynamodb,
     ec2,
     ecr,
+    ecs,
     elb,
     firehose,
     iam,
