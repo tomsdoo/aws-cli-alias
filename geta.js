@@ -213,7 +213,7 @@ void (async function() {
         expressionAttributeValuesObj,
       };
     },
-    async query(tableName, keyCondition, filterCondition) {
+    async query(tableName, keyCondition, filterCondition, indexName) {
       const {
         expressionArr: keyConditionExpressionArr,
         expressionAttributeValuesObj,
@@ -224,7 +224,8 @@ void (async function() {
       return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
         const cliParams = new CliParams({
           tableName,
-          keyConditionExpression: keyConditionExpressionArr.join(" AND"),
+          indexName,
+          keyConditionExpression: keyConditionExpressionArr.join(" AND "),
           filterExpression: filterConditionData?.expressionArr?.join(" AND ") ?? null,
           expressionAttributeValues: JSON.stringify(JSON.stringify({
             ...expressionAttributeValuesObj,
