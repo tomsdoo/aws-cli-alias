@@ -1,0 +1,14 @@
+services:
+  downloader:
+    build:
+      context: ./docker-downloader
+      dockerfile: Dockerfile
+    volumes:
+      - ./.aws:/root/.aws
+    working_dir: /usr/local/app
+  tester:
+    image: amazon/aws-cli:latest
+    volumes:
+      - ./.aws:/root/.aws
+    working_dir: /usr/local/app
+    entrypoint: /bin/sleep 1d
