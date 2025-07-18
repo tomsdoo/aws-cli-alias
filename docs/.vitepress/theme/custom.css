@@ -1,0 +1,8 @@
+body * {
+  scroll-behavior: smooth !important;
+}
+
+.vp-doc details summary {
+  cursor: pointer;
+  margin: 0;
+}
