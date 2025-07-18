@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: '/aws-cli-alias/',
   title: "AWS CLI Alias",
   description: "aliases for me",
   themeConfig: {
