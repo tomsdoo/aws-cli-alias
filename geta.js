@@ -805,16 +805,18 @@ void (async function() {
         restApiId,
       });
       const cmd = `aws apigateway get-stages ${cliParams.toString()}`;
-      return await execute(cmd)
+      const { item } = await execute(cmd)
         .then(r => JSON.parse(r));
+      return item;
     },
     async getResources(restApiId) {
       const cliParams = new CliParams({
         restApiId,
       });
       const cmd = `aws apigateway get-resources ${cliParams.toString()}`;
-      return await execute(cmd)
+      const { items } = await execute(cmd)
         .then(r => JSON.parse(r));
+      return items;
     },
     async getDomainNames() {
       return await new NextTokenLooper().doLoop(1000, async ({ maxItems, startingToken }) => {
