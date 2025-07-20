@@ -14,6 +14,8 @@ It runs Node.js that the environment has global variable named `aws`.
 
 ## Usage
 
+### interactive mode
+
 ``` sh
 aws geta
 ```
@@ -25,9 +27,22 @@ then, you will get the prompt.
 'default'
 ```
 
+### script execution mode
+
+``` js
+// work.js
+console.log(aws.profile.currentProfile);
+```
+
+``` sh
+aws geta ./work.js
+```
+
 ## global variable named `aws`
 
 `aws` has the properties below.
+
+<div class="aws-properties">
 
 - [apiGateway](#aws-apigateway)
 - [athena](#aws-athena)
@@ -48,6 +63,35 @@ then, you will get the prompt.
 - [secretsManager](#aws-secretsmanager)
 - [s3api](#aws-s3api)
 
+
+<style>
+.aws-properties > ul {
+  display: grid;
+  gap: 0.5rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  list-style: none;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  padding-inline-start: 0;
+  justify-content: center;
+  align-items: start;
+  > li {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    > a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 1em;
+      box-shadow: 0 0 1px;
+      border-radius: 0.5em;
+    }
+  }
+}
+</style>
+
+</div>
 
 ### aws.apiGateway
 
