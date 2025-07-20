@@ -29,24 +29,47 @@ void (async function() {
   }
   globalThis.execute = execute;
   
-  const getaParams = process.argv.slice(2);
-  if(getaParams.length === 1 && getaParams[0] === "--update") {
-    execute(`/bin/bash -c "ALIAS_NAME=geta; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"`);
-    process.exit();
-  } else if (getaParams.length === 1 && getaParams[0] === "--help") {
-    console.log([
-      "aws geta",
-      "",
-      "options",
-      ...[
-        { option: "--update", description: "update geta script" },
-        { option: "--help", description: "show geta help" },
-      ]
-        .map(({ option, description }) => [`  ${option}`, `    ${description}`])
-        .flat(),
-      "",
-    ].join("\n"));
-    process.exit();
+  const [nodeCommand, scriptFilePath, getaCommand] = process.argv;
+  switch(getaCommand?.toLowerCase()) {
+    case "--update":
+      execute(`/bin/bash -c "ALIAS_NAME=geta; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"`);
+      process.exit();
+    case "--help":
+      console.log([
+        "aws geta",
+        "",
+        "options",
+        ...[
+          { option: "--update", description: "update geta script" },
+          { option: "--help", description: "show geta help" },
+          { option: "<js file path>", description: "execute script"},
+        ]
+          .map(({ option, description }) => [`  ${option}`, `    ${description}`])
+          .flat(),
+        "",
+        "examples",
+        ...[
+          [
+            "aws geta --update",
+            "update geta script with https://github.com/tomsdoo/aws-cli-alias",
+          ],
+          [
+            "aws geta --help",
+            "show help",
+          ],
+          [
+            "aws geta work.js",
+            "execute work.js",
+          ],
+          [
+            "aws geta",
+            "start interactive Node.js",
+          ],
+        ].map(([exampleLine, description]) => [`  ${exampleLine}`, `    ${description}`]).flat(),
+      ].join("\n"));
+      process.exit();
+    default:
+      break;
   }
   
   function getValueText(obj) {
@@ -1113,6 +1136,19 @@ void (async function() {
     s3api,
   };
   
-  repl.start();
+  if (getaCommand) {
+    const getaScriptPath = path.resolve(process.cwd(), getaCommand);
+    await (new Function(
+      "{aws}",
+      `return new Promise(async (resolve) => {
+        ${await readFile(getaScriptPath, { encoding: "utf8" })}
+        resolve();
+      });`
+    ))({
+      aws: globalThis.aws,
+    });
+  } else {
+    repl.start();
+  }
   
 })();
