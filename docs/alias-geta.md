@@ -38,6 +38,36 @@ console.log(aws.profile.currentProfile);
 aws geta ./work.js
 ```
 
+### http server mode
+
+``` js
+aws geta http
+```
+
+``` js
+fetch(
+  "http://localhost:3000/exec",
+  {
+    method: "POST",
+    body: JSON.stringify({
+      script: "resolve(aws.profile.currentProfile);",
+    }),
+  },
+)
+  .then(r => r.json())
+  .then(({ result }) => {
+    console.log(result);
+  }); // "default"
+```
+
+#### options
+
+|option|description|default value|
+|:--|:--|:--|
+|--port|port number|3000|
+|--pathname|pathname|/exec|
+
+
 ## global variable named `aws`
 
 `aws` has the properties below.
