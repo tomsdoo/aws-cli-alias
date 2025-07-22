@@ -20,9 +20,14 @@ void (async function() {
     },
   });
   configProxy.awsProfile = "default";
+  const commandHistory = [];
   
   async function execute(commandLine) {
     return new Promise((resolve, reject) => {
+      commandHistory.push({
+        time: new Date(),
+        commandLine,
+      });
       exec(commandLine, (err, stdout) => {
         (err ? reject : resolve)(err ?? stdout);
       });
@@ -1162,6 +1167,11 @@ void (async function() {
     route53,
     secretsManager,
     s3api,
+  };
+  globalThis.session = {
+    get commandHistory() {
+      return commandHistory.slice();
+    },
   };
 
   async function executeScriptFile(scriptFilePath) {
