@@ -4,6 +4,7 @@ void (async function() {
   const path = await import("path");
   const { exec } = await import("child_process");
   const repl = await import("node:repl");
+  const http = await import("http");
   const config = {
     awsProfile: "default",
   };
@@ -43,6 +44,7 @@ void (async function() {
           { option: "--update", description: "update geta script" },
           { option: "--help", description: "show geta help" },
           { option: "<js file path>", description: "execute script"},
+          { option: "http", description: "start http server"},
         ]
           .map(({ option, description }) => [`  ${option}`, `    ${description}`])
           .flat(),
@@ -64,6 +66,14 @@ void (async function() {
           [
             "aws geta",
             "start interactive Node.js",
+          ],
+          [
+            "aws geta http",
+            "start http server",
+          ],
+          [
+            "aws geta http --port=3001 --pathname=/command",
+            "start http server with some options",
           ],
         ].map(([exampleLine, description]) => [`  ${exampleLine}`, `    ${description}`]).flat(),
       ].join("\n"));
@@ -1135,20 +1145,148 @@ void (async function() {
     secretsManager,
     s3api,
   };
-  
-  if (getaCommand) {
-    const getaScriptPath = path.resolve(process.cwd(), getaCommand);
+
+  async function executeScriptFile(scriptFilePath) {
     await (new Function(
       "{aws}",
       `return new Promise(async (resolve) => {
-        ${await readFile(getaScriptPath, { encoding: "utf8" })}
+        ${await readFile(scriptFilePath, { encoding: "utf8" })}
         resolve();
       });`
     ))({
       aws: globalThis.aws,
     });
-  } else {
-    repl.start();
   }
-  
+  async function startHttpServer({ port, pathname }) {
+    function pickBody(request) {
+      return new Promise((resolve,reject) => {
+        let body = "";
+        request.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+        request.on("end", () => {
+          try {
+            resolve({
+              body,
+              parsedBody: JSON.parse(body),
+            });
+          } catch {
+            resolve({
+              body,
+              barsedBody: null,
+            });
+          }
+        });
+        request.on("error", (e) => {
+          reject(e);
+        });
+      });
+    }
+
+    async function cors({request, response}) {
+      response.setHeader('Access-Control-Allow-Origin', '*');
+      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      if (request.method === 'OPTIONS') {
+        response.writeHead(204);
+        response.end();
+        return;
+      }
+    }
+    async function outConsole({request}) {
+      console.log(`${new Date().toISOString()} ${request.method} ${request.url}`);
+    }
+    async function notFound({response}) {
+      response.writeHead(404, {
+        "content-type": "application/json",
+      });
+      response.end(JSON.stringify({
+        message: "not found",
+      }));
+    }
+    async function executeAdHocScript({ request, response, parsedBody }) {
+      const regExp = new RegExp(`^${pathname}$`, "i");
+      if (request.method !== "POST" || request.url.match(regExp) == null) {
+        return;
+      }
+      try {
+        const result = await (new Function(
+          "{aws}",
+          `return new Promise((resolve, reject) => {
+              ${parsedBody.script}
+            });`,
+        ))({
+          aws,
+        });
+        response.writeHead(200, {
+          "content-type": "application/json",
+        });
+        response.end(JSON.stringify({
+          result,
+        }));
+      } catch(err) {
+        response.writehead(500);
+        response.end(JSON.stringify(err));
+      }
+    }
+    const server = http.createServer(async (request,response) => {
+      const handlers = [
+        outConsole,
+        cors,
+        executeAdHocScript,
+        notFound,
+      ];
+      const ctx = {
+        request,
+        response,
+        ...(await pickBody(request)),
+      };
+      for (const handler of handlers) {
+        if (response.writableEnded) {
+          break;
+        }
+        await handler(ctx);
+      }
+    });
+    server.listen(port, () => {
+      console.log(`listening localhost:${port}${pathname}...`);
+    });
+  }
+
+  if (getaCommand == null) {
+    repl.start();
+    return;
+  }
+
+  if (getaCommand === "http") {
+    const httpParams = {
+      port: null,
+      pathname: null,
+    };
+
+    for(const argStr of process.argv.slice(2)) {
+      for( const paramsProp of [
+        "port",
+        "pathname",
+      ]) {
+        const matched = argStr.match(new RegExp(`--${paramsProp}=(.*)`));
+        if (matched == null) {
+          continue;
+        }
+        const [,paramsValue] = matched;
+        httpParams[paramsProp] = paramsValue;
+        break;
+      }
+    }
+    const DEFAULT_PORT = 3000;
+    const port = httpParams.port ? Number(httpParams.port) : httpParams.port;
+    await startHttpServer({
+      port: Number.isInteger(port) ? port : DEFAULT_PORT,
+      pathname: httpParams.pathname ?? "/exec",
+    });
+    return;
+  }
+
+  const getaScriptPath = path.resolve(process.cwd(), getaCommand);
+  await executeScriptFile(getaScriptPath);
+
 })();
