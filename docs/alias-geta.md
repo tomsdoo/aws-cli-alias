@@ -1787,3 +1787,26 @@ listBuckets(): Promise<{ Name: string; CreationDate: string; }>
 </details>
 
 
+## global variable named `session`
+
+`session` has the properties below.
+
+- [commandHistory](#session-commandhistory)
+
+
+### session.commandHistory
+
+`session.commandHistory` is an array of the command executed.
+
+<details><summary>commandHistory</summary>
+
+``` ts
+commandHistory: {
+  time: Date;
+  commandLine: string;
+}[];
+```
+
+</details>
+
+
