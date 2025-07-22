@@ -713,7 +713,43 @@ getPureInstances(): Promise<Instance[]>
 <details><summary>getInstances(keyword: string)</summary>
 
 ``` ts
-getInstances(keyword: string): Promise<(Instance & { tagObj: Record<string, string>; })[]>
+getInstances(keyword: string): Promise<(Instance & {
+  start: () => Promise<{
+    CurrentState: InstanceState;
+    InstanceId: string;
+    PreviousState: InstanceState;
+  }>;
+  stop: () => Promise<{
+    CurrentState: InstanceState;
+    InstanceId: string;
+    PreviousState: InstanceState;
+  }>:
+  tagObj: Record<string, string>;
+})[]>
+```
+
+</details>
+
+<details><summary>startInstance(instanceId: string)</summary>
+
+``` ts
+startInstance(instanceId: string): Promise<{
+  CurrentState: InstanceState;
+  InstanceId: string;
+  PreviousState: InstanceState;
+}>
+```
+
+</details>
+
+<details><summary>stopInstance(instanceId: string)</summary>
+
+``` ts
+stopInstance(instanceId: string): Promise<{
+  CurrentState: InstanceState;
+  InstanceId: string;
+  PreviousState: InstanceState;
+}>
 ```
 
 </details>
@@ -766,6 +802,17 @@ interface Instance {
   VpcId: string;
   PrivateIpAddress: string;
   PublicIpAddress: string;
+}
+```
+
+</details>
+
+<details><summary>interface InstanceState</summary>
+
+``` ts
+interface InstanceState {
+  Code: number;
+  Name: string;
 }
 ```
 

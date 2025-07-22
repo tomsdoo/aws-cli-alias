@@ -315,6 +315,12 @@ void (async function() {
         .then(instances => instances
           .map(instance => ({
             ...instance,
+            async start() {
+              return aws.ec2.startInstance(instance.InstanceId);
+            },
+            async stop(force) {
+              return aws.ec2.stopInstance(instance.InstanceId, force);
+            },
             tagObj: Object.fromEntries(instance.Tags.map(({ Key, Value }) => [Key, Value])),
           }))
           .filter(instance => {
@@ -328,6 +334,18 @@ void (async function() {
             ...instance,
           }))
         )
+    },
+    async startInstance(instanceId) {
+      const cmd = `aws ec2 start-instances --instance-ids ${instanceId}`;
+      const { StartingInstances } = await execute(cmd).then(r => JSON.parse(r));
+      const [startingInstance] = StartingInstances;
+      return startingInstance;
+    },
+    async stopInstance(instanceId, force) {
+      const cmd = `aws ec2 stop-instances --instance-ids ${instanceId} ${force ? "--force" : ""}`;
+      const { StoppingInstances } = await execute(cmd).then(r => JSON.parse(r));
+      const [stoppingInstance] = StoppingInstances;
+      return stoppingInstance;
     },
     async describeVpcs() {
       return await new NextTokenLooper().doLoop(100, async ({ maxItems, startingToken }) => {
