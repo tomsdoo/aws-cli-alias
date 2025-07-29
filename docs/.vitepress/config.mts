@@ -26,7 +26,8 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/tomsdoo/aws-cli-alias' }
+      { icon: 'github', link: 'https://github.com/tomsdoo/aws-cli-alias' },
+      { icon: 'docker', link: 'https://hub.docker.com/repository/docker/tomsd/aws-cli-alias-geta/general' },
     ]
   }
 })
