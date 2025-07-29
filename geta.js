@@ -5,6 +5,7 @@ void (async function() {
   const { exec } = await import("child_process");
   const repl = await import("node:repl");
   const http = await import("http");
+  const readline = await import("readline");
   const config = {
     awsProfile: "default",
   };
@@ -1239,7 +1240,7 @@ void (async function() {
       try {
         const result = await (new Function(
           "{aws}",
-          `return new Promise((resolve, reject) => {
+          `return new Promise(async (resolve, reject) => {
               ${parsedBody.script}
             });`,
         ))({
@@ -1252,7 +1253,8 @@ void (async function() {
           result,
         }));
       } catch(err) {
-        response.writehead(500);
+        console.log(err);
+        response.writeHead(500);
         response.end(JSON.stringify(err));
       }
     }
@@ -1276,7 +1278,33 @@ void (async function() {
       }
     });
     server.listen(port, () => {
-      console.log(`listening localhost:${port}${pathname}...`);
+      for(const helpText of [
+        `listening localhost:${port}${pathname}...`,
+        "",
+        "example curl:",
+        `curl -X POST -H "Content-Type: application/json" -d '{"script": "resolve(aws.profile.currentProfile);"}' http://localhost:${port}${pathname}`,
+        "",
+        "available keys:",
+        "\tq: quit",
+      ]) {
+        console.log(helpText);
+      }
+
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.on("line", (commandChar) => {
+        switch(commandChar.toLowerCase()) {
+          case "q": {
+            server.close();
+            process.exit();
+          }
+          default: {
+            break;
+          }
+        }
+      });
     });
   }
 
