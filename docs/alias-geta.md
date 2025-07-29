@@ -6,10 +6,19 @@ outline: deep
 
 It runs Node.js that the environment has global variable named `aws`.
 
-## Installation
+## Setup
+
+### Local Installation
 
 ``` sh
 /bin/bash -c "ALIAS_NAME=geta; $(curl -fsSL https://raw.githubusercontent.com/tomsdoo/aws-cli-alias/HEAD/install.sh)"
+```
+
+### Docker Run
+
+``` sh
+# aws geta will start on the container
+docker run -it --rm -v ~/.aws:/root/.aws tomsd/aws-cli-alias-geta:0.1.1
 ```
 
 ## Usage
