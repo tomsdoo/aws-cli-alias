@@ -22,5 +22,4 @@ COPY geta.js /usr/local/scripts/geta.js
 
 WORKDIR /usr/local/app
 
-ENTRYPOINT ["node"]
-CMD ["/usr/local/scripts/geta.js"]
+ENTRYPOINT ["node", "/usr/local/scripts/geta.js"]
