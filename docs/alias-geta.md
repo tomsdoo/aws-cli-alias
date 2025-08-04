@@ -18,7 +18,7 @@ It runs Node.js that the environment has global variable named `aws`.
 
 ``` sh
 # aws geta will start on the container
-docker run -it --rm -v ~/.aws:/root/.aws tomsd/aws-cli-alias-geta:0.1.1
+docker run -it --rm -v ~/.aws:/root/.aws tomsd/aws-cli-alias-geta:0.1.2
 ```
 
 ## Usage
