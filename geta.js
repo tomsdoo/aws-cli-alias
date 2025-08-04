@@ -5,7 +5,7 @@ void (async function() {
   const { exec } = await import("child_process");
   const repl = await import("node:repl");
   const http = await import("http");
-  const readline = await import("readline");
+  const { emitKeypressEvents } = await import("readline");
   const config = {
     awsProfile: "default",
   };
@@ -1290,19 +1290,12 @@ void (async function() {
         console.log(helpText);
       }
 
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-      rl.on("line", (commandChar) => {
-        switch(commandChar.toLowerCase()) {
-          case "q": {
-            server.close();
-            process.exit();
-          }
-          default: {
-            break;
-          }
+      emitKeypressEvents(process.stdin);
+      process.stdin.setRawMode(true);
+      process.stdin.on("keypress", (_code, key) => {
+        if ((key.ctrl && key.name === "c") || key.name === "q") {
+          server.close();
+          process.exit();
         }
       });
     });
