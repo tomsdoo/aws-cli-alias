@@ -252,6 +252,16 @@ void (async function() {
         expressionAttributeValuesObj,
       };
     },
+    formatCondition(condition) {
+      return Object.fromEntries(
+        Object.entries(condition).map(([key, value]) => [
+          key,
+          {
+            [typeof value === "number" ? "N" : "S"]: `${value}`,
+          },
+        ]),
+      );
+    },
     async query(tableName, keyCondition, filterCondition, indexName) {
       const {
         expressionArr: keyConditionExpressionArr,
@@ -305,7 +315,24 @@ void (async function() {
         );
         return { resultItems, NextToken };
       });
-    }
+    },
+    async getItem(tableName, keyCondition) {
+      const cliParams = new CliParams({
+        tableName,
+        key: JSON.stringify(JSON.stringify(aws.dynamodb.formatCondition(keyCondition))),
+      });
+      const cmd = `aws dynamodb get-item ${cliParams.toString()}`;
+      const { Item } = await execute(cmd).then(r => JSON.parse(r));
+      return Item;
+    },
+    async deleteItem(tableName, keyCondition) {
+      const cliParams = new CliParams({
+        tableName,
+        key: JSON.stringify(JSON.stringify(aws.dynamodb.formatCondition(keyCondition))),
+      });
+      const cmd = `aws dynamodb delete-item ${cliParams.toString()}`;
+      return await execute(cmd);
+    },
   };
   
   const ec2 = {
