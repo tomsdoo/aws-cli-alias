@@ -1152,6 +1152,25 @@ void (async function() {
     }
   };
   
+  const sqs = {
+    async listQueues() {
+      return await execute(`aws sqs list-queues`)
+        .then((r) => JSON.parse(r).QueueUrls.map(url => ({
+          name: url.split("/").slice(-1)[0],
+          url,
+          getQueueAttributes: async () => await aws.sqs.getQueueAttributes(url),
+        })));
+    },
+    async getQueueAttributes(queueUrl) {
+      const cliParams = new CliParams({
+        queueUrl,
+        attributeNames: "All",
+      });
+      return await execute(`aws sqs get-queue-attributes ${cliParams.toString()}`)
+        .then((r) => JSON.parse(r).Attributes);
+    },
+  };
+
   const profile = {
     get currentProfile() {
       return configProxy.awsProfile;
@@ -1195,6 +1214,7 @@ void (async function() {
     route53,
     secretsManager,
     s3api,
+    sqs,
   };
   globalThis.session = {
     get commandHistory() {
