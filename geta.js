@@ -1,11 +1,68 @@
 void (async function() {
-  const { readFile } = await import("fs/promises");
+  const { readFile, writeFile } = await import("fs/promises");
   const { homedir } = await import("os");
   const path = await import("path");
   const { exec } = await import("child_process");
   const repl = await import("node:repl");
   const http = await import("http");
   const { emitKeypressEvents } = await import("readline");
+
+  class GetaConfig {
+    TerminalColor = {
+      BACK_BLACK: 40,
+      BACK_RED: 41,
+      BACK_GREEN: 42,
+      BACK_YELLOW: 43,
+      BACK_BLUE: 44,
+      BACK_MAGENTA: 45,
+      BACK_CYAN: 46,
+      BACK_WHITE: 47,
+      FORE_BLACK: 30,
+      FORE_RED: 31,
+      FORE_GREEN: 32,
+      FORE_YELLOW: 33,
+      FORE_BLUE: 34,
+      FORE_MAGENTA: 35,
+      FORE_CYAN: 36,
+      FORE_WHITE: 37,
+    };
+    getaConfigFilePath = path.join(homedir(), ".aws/geta-config.json");
+    configData = {};
+    async load() {
+      try {
+        const textContent = await readFile(this.getaConfigFilePath, { encoding: "utf8" });
+        this.configData = JSON.parse(textContent);
+      } catch {
+        this.configData = {};
+      }
+      return this.configData;
+    }
+    async save() {
+      try {
+        await writeFile(this.getaConfigFilePath, JSON.stringify(this.configData, null, 2), { encoding: "utf8" });
+      } catch {}
+    }
+    get promptColors() {
+      return this.configData.promptColors ?? {};
+    }
+    set promptColors(value) {
+      this.configData.promptColors = value;
+      void this.save();
+    }
+    getPromptColors(profileName) {
+      return this.promptColors[profileName] ?? [];
+    }
+    async setPromptColors(profileName, colorCode) {
+      const colors = Array.isArray(colorCode) ? colorCode : [colorCode];
+      const nextPromptColors = {
+        ...this.promptColors,
+        [profileName]: colors,
+      };
+      this.promptColors = nextPromptColors;
+    }
+  }
+  const getaConfig = new GetaConfig();
+
   const config = {
     awsProfile: "default",
   };
@@ -1216,6 +1273,7 @@ void (async function() {
     s3api,
     sqs,
   };
+  globalThis.getaConfig = getaConfig;
   globalThis.session = {
     get commandHistory() {
       return commandHistory.slice();
@@ -1349,7 +1407,26 @@ void (async function() {
   }
 
   if (getaCommand == null) {
-    repl.start();
+    await getaConfig.load();
+    function getPrompt() {
+      const colors = getaConfig.getPromptColors(configProxy.awsProfile);
+      const ESCAPE_SEQUENCE = "\x1b[";
+      const settingColorFragments = colors.map(colorCode => `${ESCAPE_SEQUENCE}${colorCode}m`).join("");
+      const resettingColorFragment = `${ESCAPE_SEQUENCE}0m`;
+      const promptChars = `${configProxy.awsProfile} > `;
+      return `${settingColorFragments}${promptChars}${resettingColorFragment}`;
+    }
+    const r = repl.start({
+      prompt: getPrompt(),
+      terminal: true,
+    });
+    const defaultEval = r.eval;
+    r.eval = (cmd, context, filename, callback) => {
+      defaultEval(cmd, context, filename, (err, result) => {
+        r.setPrompt(getPrompt());
+        callback(err, result);
+      });
+    };
     return;
   }
 
