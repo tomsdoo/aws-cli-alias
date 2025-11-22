@@ -21,6 +21,11 @@ It runs Node.js that the environment has global variable named `aws`.
 docker run -it --rm -v ~/.aws:/root/.aws tomsd/aws-cli-alias-geta:0.1.2
 ```
 
+``` sh
+# aws geta will start on the container
+docker run -it --rm -v ~/.aws:/root/.aws ghcr.io/tomsdoo/aws-cli-alias:main
+```
+
 ## Usage
 
 ### interactive mode
@@ -585,6 +590,30 @@ listTagles(): Promise<string[]>
 
 ``` ts
 describeTable(tableName: string): Promise<Table[]>
+```
+
+</details>
+
+<details><summary>query(tableName: string, keyCondition: object, filterCondition?: object, indexName?: string)</summary>
+
+``` ts
+query(
+  tableName: string,
+  keyCondition: Record<string, unknown>,
+  filterCondition?: Record<string, unknown>,
+  indexName?: string
+): Promise<object[]>
+```
+
+</details>
+
+<details><summary>scan(tableName: string, condition: object)</summary>
+
+``` ts
+scan(
+  tableName: string,
+  keyCondition: Record<string, unknown>,
+): Promise<object[]>
 ```
 
 </details>
