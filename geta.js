@@ -660,6 +660,12 @@ void (async function() {
     async listWorkgroups() {
       return await execute(`aws redshift-serverless list-workgroups`).then((r) => JSON.parse(r).workgroups);
     },
+    async getNamespace(namespaceName) {
+      return await execute(`aws redshift-serverless get-namespace --namespace-name ${namespaceName}`).then((r) => JSON.parse(r).namespace);
+    },
+    async getWorkgroup(workgroupName) {
+      return await execute(`aws redshift-serverless get-workgroup --workgroup-name ${workgroupName}`).then((r) => JSON.parse(r).workgroup);
+    },
     async listStatements() {
       return await new NextTokenLooper().doLoop(1000, async ({naxItems, startingToken}) => {
         const { Statements: resultItems, NextToken } = await execute(`aws redshift-data list-statements`).then((r) => JSON.parse(r));
@@ -687,6 +693,15 @@ void (async function() {
         );
         return { resultItems, NextToken };
       });
+    },
+    async getDb(workgroupName, dbName) {
+      if (dbName != null) {
+        return new aws.redshift.Db(workgroupName, dbName);
+      }
+
+      const workgroup = await aws.redshift.getWorkgroup(workgroupName);
+      const ns = await aws.redshift.getNamespace(workgroup.namespaceName);
+      return new aws.redshift.Db(workgroup.workgroupName, ns.dbName);
     },
     Db: class Db extends NextTokenLooper {
       workgroupName;

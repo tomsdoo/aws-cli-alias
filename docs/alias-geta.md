@@ -1724,7 +1724,55 @@ listNamespaces(): Promise<{
 
 </details>
 
-- listWorkgroups()
+<details><summary>listWorkgroups()</summary>
+
+
+``` ts
+listWorkgroups(): Promise<{
+  baseCapacity: number;
+  configParameters: object[];
+  creationDate: string;
+  endpoint: {
+    address: string;
+    port: number;
+    vpcEndpoints: object[];
+  };
+  enhancedVpcRouting: boolean;
+  ipAddressType: string;
+  maxCapacity: number;
+  namespaceName: string;
+  patchVersion: string;
+  pricePerformanceTarget: {
+    status: string;
+  };
+  publiclyAccessible: boolean;
+  securityGroupIds: string[];
+  status: string;
+  subnetIds: string[];
+  trackName: string;
+  workgroupArn: string;
+  workgroupId: string;
+  workgroupName: string;
+  workgroupVersion: string;
+}[]>
+```
+
+</details>
+
+<details><summary>getDb(workgroupName, dbName)</summary>
+
+``` ts
+getDb(
+  workgroupName: string;
+  dbName?: string;
+): Promise<{
+  listDatabases: () => Promise<unknown[]>;
+  listSchemas: () => Promise<unknown[]>;
+  executeStatement(sql: string) => Promise<unknown[]>;
+}>;
+```
+
+</details>
 
 
 ### aws.route53
