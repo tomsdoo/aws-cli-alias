@@ -86,7 +86,9 @@ void (async function() {
         time: new Date(),
         commandLine,
       });
-      exec(commandLine, (err, stdout) => {
+      exec(commandLine, {
+        maxBuffer: 100 * 1024 * 1024,
+      },(err, stdout) => {
         (err ? reject : resolve)(err ?? stdout);
       });
     });
